@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"go-redis/ae"
 	"go-redis/conf"
+	"go-redis/http"
 	"go-redis/net"
 	"go-redis/obj"
 	"hash/fnv"
@@ -446,5 +447,55 @@ func main() {
 	server.aeLoop.AddFileEvent(server.fd, ae.FE_READABLE, AcceptHandler, nil)
 	server.aeLoop.AddTimeEvent(ae.TE_NORMAL, 100, ServerCron, nil)
 	log.Println("redis server is up.")
+
+	if config.HttpAddr != "" {
+		http.StartHttpListen(config.HttpAddr).AddRoute("/key/set", getCommandHttp).
+			AddRoute("/key/get", setCommandHttp).
+			AddRoute("/key/expire", expireCommandHttp)
+	}
 	server.aeLoop.AeMain()
+}
+
+func getCommandHttp(arg ...string) string {
+	if len(arg) != 1 {
+		return "-1"
+	}
+	valObj := findKeyRead(&obj.RedisObj{Val: arg[0]})
+	if valObj == nil {
+		return "-1"
+	} else if valObj.Type != obj.STR {
+		return "wrong type"
+	} else {
+		return valObj.StrVal()
+	}
+}
+
+func setCommandHttp(arg ...string) string {
+	if len(arg) != 2 {
+		return "-1"
+	}
+	keyObj := &obj.RedisObj{Val: arg[0]}
+	valObj := &obj.RedisObj{Val: arg[1]}
+	server.db.data.Set(keyObj, valObj)
+	return "OK"
+}
+
+func expireCommandHttp(arg ...string) string {
+	if len(arg) != 2 {
+		return "-1"
+	}
+	keyObj := &obj.RedisObj{Val: arg[0]}
+	valObj := findKeyRead(&obj.RedisObj{Val: arg[0]})
+	if valObj == nil {
+		return "-1"
+	}
+
+	expire, err := strconv.Atoi(arg[1])
+	if err != nil {
+		return "-1"
+	}
+	e := ae.GetMsTime() + int64(expire*1000)
+	expObj := obj.CreateFromInt(e)
+	server.db.expire.Set(keyObj, expObj)
+	return "OK"
 }

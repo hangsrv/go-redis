@@ -7,7 +7,8 @@ import (
 )
 
 type Config struct {
-	Port int
+	Port     int
+	HttpAddr string
 }
 
 func LoadConfig() (config *Config, err error) {
