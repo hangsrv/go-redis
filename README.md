@@ -310,3 +310,23 @@ func initServer(config *conf.Config) error {
 ```
 
 ## 模拟测试
+
+### 客户端连接
+
+![](img/Snipaste_2023-10-04_17-18-17.png)
+
+### 错误处理
+
+![](img/Snipaste_2023-10-04_17-20-33.png)
+
+![](img/Snipaste_2023-10-04_17-24-45.png)
+
+### 创建&查询
+
+![](img/Snipaste_2023-10-04_17-19-35.png)
+
+![](img/Snipaste_2023-10-04_17-26-45.png)
+
+### 支持过期键
+
+![](img/Snipaste_2023-10-04_17-30-00.png)

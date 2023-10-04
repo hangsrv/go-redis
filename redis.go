@@ -189,6 +189,11 @@ func ReadQueryFromClient(loop *ae.AeLoop, fd int, extra interface{}) {
 		freeClient(client)
 		return
 	}
+	if n == 0 {
+		log.Printf("process query buf empty")
+		freeClient(client)
+		return
+	}
 	client.queryLen += n
 	log.Printf("read %v bytes from client:%v\n", n, client.fd)
 	log.Printf("ReadQueryFromClient, queryBuf : %v\n", string(client.queryBuf))
