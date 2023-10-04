@@ -73,7 +73,6 @@ func TestBulkBuf(t *testing.T) {
 func TestProcessQueryBuf(t *testing.T) {
 	var conf conf.Config
 	initServer(&conf)
-	// just need real fd to support AddReply
 	client := CreateClient(server.fd)
 	ReadQuery(client, "*3\r\n$3\r\nset\r\n$3\r\nkey\r\n$3\r\nval\r\n")
 	err := ProcessQueryBuf(client)
@@ -89,4 +88,8 @@ func TestProcessQueryBuf(t *testing.T) {
 	assert.Equal(t, 3, len(client.args))
 	val2 := server.db.data.Get(key)
 	assert.Equal(t, "val2", val2.StrVal())
+}
+
+func TestGetAndSet(t *testing.T) {
+	
 }

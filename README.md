@@ -297,10 +297,16 @@ func initServer(config *conf.Config) error {
 		expire: obj.DictCreate(obj.DictType{HashFunc: GStrHash, EqualFunc: GStrEqual}), // 过期键：清理时机 server后台任务&crud key
 	}
 	var err error
-	if server.aeLoop, err = ae.AeLoopCreate(); err != nil { // 创建事件循环
+	server.fd, err = net.TcpServer(server.port) // 启动服务监听
+	if err != nil {
 		return err
 	}
-	server.fd, err = net.TcpServer(server.port)
-	return err
+	server.aeLoop, err = ae.AeLoopCreate() // 创建事件循环
+	if err != nil {
+		return err
+	}
+	return nil
 }
 ```
+
+## 模拟测试

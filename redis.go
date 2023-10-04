@@ -9,7 +9,6 @@ import (
 	"go-redis/obj"
 	"hash/fnv"
 	"log"
-	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -95,7 +94,7 @@ func resetClient(client *RedisClient) {
 }
 
 func (client *RedisClient) findLineInQuery() (int, error) {
-	index := strings.Index(string(client.queryBuf[:client.queryLen]), "\r\n")
+	index := strings.Index(string(client.queryBuf[:client.queryLen]), "\n")
 	if index < 0 && client.queryLen > MAX_INLINE {
 		return index, errors.New("too big inline cmd")
 	}
@@ -116,8 +115,8 @@ func handleInlineBuf(client *RedisClient) (bool, error) {
 	}
 
 	subs := strings.Split(string(client.queryBuf[:index]), " ")
-	client.queryBuf = client.queryBuf[index+2:]
-	client.queryLen -= index + 2
+	client.queryBuf = client.queryBuf[index+1:]
+	client.queryLen -= index + 1
 	client.args = make([]*obj.RedisObj, len(subs))
 	for i, v := range subs {
 		client.args[i] = obj.CreateObject(obj.STR, v)
@@ -217,7 +216,7 @@ func ProcessQueryBuf(client *RedisClient) error {
 		} else if client.cmdTy == COMMAND_BULK {
 			ok, err = handleBulkBuf(client)
 		} else {
-			return errors.New("unknow Godis Command Type")
+			return errors.New("unknow Redis Command Type")
 		}
 		if err != nil {
 			return err
@@ -325,6 +324,7 @@ func freeClient(client *RedisClient) {
 	server.aeLoop.RemoveFileEvent(client.fd, ae.FE_WRITABLE)
 	freeReplyList(client)
 	net.Close(client.fd)
+	log.Printf("close client fd:%d\n", client.fd)
 }
 
 func SendReplyToClient(loop *ae.AeLoop, fd int, extra interface{}) {
@@ -417,25 +417,29 @@ func initServer(config *conf.Config) error {
 		expire: obj.DictCreate(obj.DictType{HashFunc: GStrHash, EqualFunc: GStrEqual}),
 	}
 	var err error
-	if server.aeLoop, err = ae.AeLoopCreate(); err != nil {
+	server.fd, err = net.TcpServer(server.port)
+	if err != nil {
 		return err
 	}
-	server.fd, err = net.TcpServer(server.port)
-	return err
+	server.aeLoop, err = ae.AeLoopCreate(server.fd)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func main() {
-	path := os.Args[1]
-	config, err := conf.LoadConfig(path)
+	log.SetFlags(log.Lshortfile | log.Ldate | log.Ltime)
+	config, err := conf.LoadConfig()
 	if err != nil {
-		log.Printf("config error: %v\n", err)
+		log.Fatalf("config error: %v\n", err)
 	}
 	err = initServer(config)
 	if err != nil {
-		log.Printf("init server error: %v\n", err)
+		log.Fatalf("init server error: %v\n", err)
 	}
 	server.aeLoop.AddFileEvent(server.fd, ae.FE_READABLE, AcceptHandler, nil)
 	server.aeLoop.AddTimeEvent(ae.TE_NORMAL, 100, ServerCron, nil)
-	log.Println("godis server is up.")
+	log.Println("redis server is up.")
 	server.aeLoop.AeMain()
 }

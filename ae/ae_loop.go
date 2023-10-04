@@ -35,14 +35,15 @@ func (loop *AeLoop) getEpollMask(fd int) uint32 {
 }
 
 // AeLoopCreate 创建
-func AeLoopCreate() (*AeLoop, error) {
-	epollFd, err := unix.Kqueue()
+func AeLoopCreate(fd int) (*AeLoop, error) {
+	epfd, err := unix.EpollCreate(1) // 创建一个epoll实例
 	if err != nil {
+		log.Println("Error creating epoll instance:", err)
 		return nil, err
 	}
 	return &AeLoop{
 		FileEvents:      make(map[int]*AeFileEvent),
-		fileEventFd:     epollFd,
+		fileEventFd:     epfd,
 		timeEventNextId: 1,
 		stop:            false,
 	}, nil
@@ -70,7 +71,7 @@ func (loop *AeLoop) AeWait() (tes []*AeTimeEvent, fes []*AeFileEvent) {
 	var events [128]unix.EpollEvent
 	n, err := unix.EpollWait(loop.fileEventFd, events[:], int(timeout)) // fe不能无限等待，会导致te事件阻塞
 	if err != nil {
-		log.Printf("epoll wait warnning: %v\n", err)
+		log.Printf("epoll wait warnning: %v fd:%d len:%d timeout:%d\n", err, loop.fileEventFd, len(events[:]), timeout)
 	}
 	if n > 0 {
 		log.Printf("ae get %v epoll events\n", n)
@@ -120,7 +121,7 @@ func (loop *AeLoop) AeProcess(tes []*AeTimeEvent, fes []*AeFileEvent) {
 
 // AeMain 主循环
 func (loop *AeLoop) AeMain() {
-	for loop.stop != true {
+	for !loop.stop {
 		tes, fes := loop.AeWait()
 		loop.AeProcess(tes, fes)
 	}
