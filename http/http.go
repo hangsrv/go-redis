@@ -37,7 +37,8 @@ type Handler func(...string) string
 
 func (r *router) AddRoute(path string, handler Handler) *router {
 	r.routes[path] = func(req *request, rsp *response) {
-		okHandler(req, rsp, handler(string(req.requestBody)))
+		args := strings.Split(string(req.requestBody), "|")
+		okHandler(req, rsp, handler(args...))
 	}
 	return r
 }
@@ -56,14 +57,15 @@ func StartHttpListen(addr string) *router {
 	if err != nil {
 		log.Fatalln("Error listening:", err)
 	}
-	defer listener.Close()
+
 	log.Println("Server listening on ", addr)
 	router := newRouter()
 	go func() {
+		defer listener.Close()
 		for {
 			conn, err := listener.Accept()
 			if err != nil {
-				fmt.Println("Error accepting connection:", err)
+				log.Println("Error accepting connection:", err)
 				continue
 			}
 			go handleRequest(conn, router)

@@ -449,10 +449,12 @@ func main() {
 	log.Println("redis server is up.")
 
 	if config.HttpAddr != "" {
-		http.StartHttpListen(config.HttpAddr).AddRoute("/key/set", getCommandHttp).
-			AddRoute("/key/get", setCommandHttp).
+		http.StartHttpListen(config.HttpAddr).
+			AddRoute("/key/get", getCommandHttp).
+			AddRoute("/key/set", setCommandHttp).
 			AddRoute("/key/expire", expireCommandHttp)
 	}
+
 	server.aeLoop.AeMain()
 }
 

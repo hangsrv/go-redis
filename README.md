@@ -309,7 +309,7 @@ func initServer(config *conf.Config) error {
 }
 ```
 
-## 模拟测试
+## 使用 nc 连接测试
 
 ### 客户端连接
 
@@ -330,3 +330,9 @@ func initServer(config *conf.Config) error {
 ### 支持过期键
 
 ![](img/Snipaste_2023-10-04_17-30-00.png)
+
+## 支持 http 访问
+
+支持 http：提供基于 socket 的 http 访问
+
+![](img/Snipaste_2023-10-04_19-42-58.png)
