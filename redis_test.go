@@ -89,7 +89,3 @@ func TestProcessQueryBuf(t *testing.T) {
 	val2 := server.db.data.Get(key)
 	assert.Equal(t, "val2", val2.StrVal())
 }
-
-func TestGetAndSet(t *testing.T) {
-	
-}
